@@ -25,3 +25,4 @@ export const Money=({v})=>peso(v);
 export const DF={mode:'all',from:'',to:''};
 export const DateFilter=({v,set})=><div className="dfl"><select aria-label="Date filter" value={v.mode} onChange={e=>set({...v,mode:e.target.value})}><option value="all">All dates</option><option value="today">Today</option><option value="week">This Week</option><option value="month">This Month</option><option value="custom">Custom Date Range</option></select>
  {v.mode==='custom'&&<><input type="date" aria-label="From date" value={v.from} onChange={e=>set({...v,from:e.target.value})}/><input type="date" aria-label="To date" value={v.to} onChange={e=>set({...v,to:e.target.value})}/></>}</div>;
+export const PaidBadge=({v})=>v==='paid'?<span className="badge b-green"><CheckCircle2 size={13}/>Paid</span>:<span className="badge b-orange"><AlertTriangle size={13}/>Not Paid</span>;

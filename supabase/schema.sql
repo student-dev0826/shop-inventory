@@ -8,6 +8,9 @@ create table public.products (
   selling_price numeric(12,2) not null default 0 check (selling_price >= 0),
   unit_cost numeric(14,4) not null default 0 check (unit_cost >= 0), -- cost per item; stays fixed when stock changes
   received_status text not null default 'received' check (received_status in ('received','partially_received','not_received')),
+  payment_status text not null default 'not_paid' check (payment_status in ('paid','not_paid')),
+  payment_mode text check (payment_mode in ('cash','gcash','maya','bank','card','other')),
+  payment_reference text check (payment_reference is null or length(payment_reference) <= 60),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

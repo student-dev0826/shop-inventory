@@ -2,7 +2,7 @@ import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import * as api from './api.js';
 import {supabase} from './supabase.js';
 import {LayoutDashboard,Boxes,History as HIcon,Menu as MenuI,Package,Layers,Wallet,TrendingUp,PiggyBank,Truck,Search,SlidersHorizontal,Plus,Trash2,Store,RotateCcw} from 'lucide-react';
-import {peso,calc,stockStatus,RECEIVED,ACTS,fmtDate,inRange,validate,today} from './lib.js';
+import {peso,calc,stockStatus,RECEIVED,ACTS,fmtDate,inRange,validate,today,PAYMENT_MODES} from './lib.js';
 import Dashboard from './dashboard/Dashboard.jsx';
 import {Btn,Modal,Confirm,Field,ReceivedBadge,StockBadge,SummaryCard,Empty,Timeline,Menu,DateFilter,DF} from './ui.jsx';
 import StockModal from './products/StockModal.jsx';
@@ -10,10 +10,10 @@ import Details from './products/ProductDetails.jsx';
 import HistoryPage from './history/HistoryPage.jsx';
 import InventoryPage from './inventory/InventoryPage.jsx';
 
-const blank={name:'',quantity:'',wholePrice:'',sellingPrice:'',received:'received',dateAdded:today()};
+const blank={name:'',quantity:'',wholePrice:'',sellingPrice:'',received:'received',dateAdded:today(),paid:'not_paid',paymentMode:'',reference:''};
 
 function ProductForm({init,onSave,onClose}){
- const [f,setF]=useState(init?{name:init.name,quantity:init.quantity,wholePrice:init.wholePrice,sellingPrice:init.sellingPrice,received:init.received,dateAdded:init.dateAdded}:blank);
+ const [f,setF]=useState(init?{name:init.name,quantity:init.quantity,wholePrice:init.wholePrice,sellingPrice:init.sellingPrice,received:init.received,dateAdded:init.dateAdded,paid:init.paid,paymentMode:init.paymentMode,reference:init.reference}:blank);
  const [err,setErr]=useState({}),set=k=>e=>setF({...f,[k]:e.target.value});
  const q=Number(f.quantity)||0,w=Number(f.wholePrice)||0,s=Number(f.sellingPrice)||0,each=q>0?w/q:(init?.unit||0);
  const submit=e=>{e.preventDefault();const er=validate(f);setErr(er);if(!Object.keys(er).length)onSave({...f,name:f.name.trim(),quantity:+f.quantity,wholePrice:+f.wholePrice,sellingPrice:+f.sellingPrice})};
@@ -23,7 +23,10 @@ function ProductForm({init,onSave,onClose}){
  <Field label="Quantity" error={err.quantity}><input type="number" min="0" step="1" value={f.quantity} onChange={set('quantity')}/></Field>
  <Field label="Whole Price (₱)" error={err.wholePrice}><input type="number" min="0" step="0.01" value={f.wholePrice} onChange={set('wholePrice')}/></Field>
  <Field label="Selling Price (₱)" error={err.sellingPrice}><input type="number" min="0" step="0.01" value={f.sellingPrice} onChange={set('sellingPrice')}/></Field>
- <Field label="Received Status"><select value={f.received} onChange={set('received')}>{Object.entries(RECEIVED).map(([k,l])=><option key={k} value={k}>{l}</option>)}</select></Field></div>
+ <Field label="Received Status"><select value={f.received} onChange={set('received')}>{Object.entries(RECEIVED).map(([k,l])=><option key={k} value={k}>{l}</option>)}</select></Field>
+ <Field label="Payment Status"><select value={f.paid} onChange={set('paid')}><option value="not_paid">Not Paid</option><option value="paid">Paid</option></select></Field>
+ <Field label="Mode of Payment" error={err.paymentMode}><select value={f.paymentMode} onChange={set('paymentMode')}><option value="">Select…</option>{Object.entries(PAYMENT_MODES).map(([k,l])=><option key={k} value={k}>{l}</option>)}</select></Field>
+ <Field label="Reference Number (optional)" error={err.reference}><input value={f.reference} onChange={set('reference')} maxLength={60} placeholder="e.g. GCash ref no."/></Field></div>
  <div className="calc"><div><span className="muted xs">Price Each</span><b>{peso(each)}</b></div><div><span className="muted xs">Profit Each</span><b>{peso(s-each)}</b></div><div><span className="muted xs">Expected Sales</span><b>{peso(s*q)}</b></div><div><span className="muted xs">Expected Profit</span><b>{peso((s-each)*q)}</b></div></div>
  <div className="actions"><Btn type="button" v="secondary" onClick={onClose}>Cancel</Btn><Btn type="submit">{init?'Save Changes':'Add Product'}</Btn></div></form></Modal>}
 
@@ -41,7 +44,7 @@ export default function App(){
  const find=id=>items.find(p=>p.id===id);
  const run=async(fn,msg,m=null)=>{if(busy.current)return;busy.current=true;setSaving(true);try{await fn();await refresh();setModal(m);setToast(msg)}catch(e){setToast('Something went wrong: '+e.message);refresh()}finally{busy.current=false;setSaving(false)}};
  const addP=f=>run(()=>api.addProduct(f),'Product added successfully.');
- const editP=(o,f)=>run(()=>api.editProduct(o,f),f.received!==o.received&&f.name===o.name&&f.quantity===o.quantity&&f.wholePrice===o.wholePrice&&f.sellingPrice===o.sellingPrice&&f.dateAdded===o.dateAdded?'Received status updated.':'Product updated successfully.',ret());
+ const editP=(o,f)=>run(()=>api.editProduct(o,f),f.received!==o.received&&f.name===o.name&&f.quantity===o.quantity&&f.wholePrice===o.wholePrice&&f.sellingPrice===o.sellingPrice&&f.dateAdded===o.dateAdded&&f.paid===o.paid&&f.paymentMode===o.paymentMode&&f.reference===o.reference?'Received status updated.':'Product updated successfully.',ret());
  const stock=(p,v,add)=>run(()=>api.adjustStock(p.id,add?v:-v),add?'Stock added successfully.':'Stock removed successfully.',ret());
  const del=p=>run(()=>api.deleteProduct(p.id),'Product deleted successfully.');
  const act=(k,p)=>setModal({k:k==='add'?'add_stock':k,id:p.id});

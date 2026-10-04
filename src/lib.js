@@ -5,6 +5,8 @@ export const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,
 export const today=()=>new Date().toISOString().slice(0,10);
 export const calc=p=>{const q=num(p.quantity),s=num(p.sellingPrice),u=q>0?num(p.wholePrice)/q:num(p.unit),pe=s-u;return{...p,quantity:q,priceEach:u,profitEach:pe,expectedSales:s*q,expectedProfit:pe*q}};
 export const stockStatus=q=>q>=20?{label:'Normal',cls:'b-green'}:q>=5?{label:'Low Stock',cls:'b-pink'}:q>=1?{label:'Very Low',cls:'b-orange'}:{label:'Out of Stock',cls:'b-red'};
+export const PAYMENT_MODES={cash:'Cash',gcash:'GCash',maya:'Maya',bank:'Bank Transfer',card:'Credit/Debit Card',other:'Other'};
+export const PAID_STATUS={paid:'Paid',not_paid:'Not Paid'};
 export const RECEIVED={received:'Received',partial:'Partially Received',not:'Not Received'};
 export const ACTS=['Product Added','Stock Added','Stock Removed','Product Edited','Selling Price Changed','Received Status Changed','Product Deleted'];
 export const fmtDate=d=>new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
@@ -16,5 +18,6 @@ export function validate(f){const e={},q=f.quantity,w=f.wholePrice,s=f.sellingPr
  if(!String(f.name||'').trim())e.name='Please enter an item name.';
  if(q===''||!Number.isInteger(Number(q))||Number(q)<0)e.quantity='Enter a whole number, 0 or more.';
  if(w===''||!(Number(w)>=0))e.wholePrice='Enter a valid price, 0 or more.';
- if(s===''||!(Number(s)>=0))e.sellingPrice='Enter a valid price, 0 or more.';return e}
+ if(s===''||!(Number(s)>=0))e.sellingPrice='Enter a valid price, 0 or more.';
+ if(f.paid==='paid'&&!f.paymentMode)e.paymentMode='Choose how this was paid.';if(String(f.reference||'').length>60)e.reference='Keep the reference under 60 characters.';return e}
 const KEY='shop_inventory_v1';
