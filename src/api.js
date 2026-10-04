@@ -1,0 +1,31 @@
+// All Supabase access lives here. The UI only sees the same product/history shapes as before.
+import {supabase} from './supabase.js';
+import {peso,RECEIVED} from './lib.js';
+const R2D={received:'received',partial:'partially_received',not:'not_received'},D2R=Object.fromEntries(Object.entries(R2D).map(([a,b])=>[b,a]));
+const T2D={'Product Added':'product_added','Stock Added':'stock_added','Stock Removed':'stock_removed','Product Edited':'product_edited','Selling Price Changed':'selling_price_changed','Received Status Changed':'received_status_changed','Product Deleted':'product_deleted'},D2T=Object.fromEntries(Object.entries(T2D).map(([a,b])=>[b,a]));
+const need=()=>{if(!supabase)throw new Error('Supabase is not configured. Copy .env.example to .env and set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then restart the dev server.')};
+const friendly=e=>{const m=String(e?.message||'');if(/fetch|network|load failed/i.test(m))return"Can't reach the server. Check your internet connection and try again.";if(e?.code==='42501'||/permission|row-level/i.test(m))return"You don't have permission to do that.";if(e?.code==='23514')return"One of the values isn't allowed. Please check the numbers and try again.";if(/not found/i.test(m))return'This product no longer exists. It may have been deleted on another device.';if(/Cannot remove more/i.test(m))return m;return'Something went wrong while talking to the database. Please try again.'};
+const ok=({data,error})=>{if(error){console.error(error);throw new Error(friendly(error))}return data};
+const toProduct=r=>({id:r.id,name:r.item_name,dateAdded:r.date_added,quantity:Math.max(0,+r.quantity||0),wholePrice:+r.whole_price||0,sellingPrice:+r.selling_price||0,unit:+r.unit_cost||0,received:D2R[r.received_status]||'not',createdAt:r.created_at,updatedAt:r.updated_at});
+const toHistory=r=>({id:r.id,productId:r.product_id,productName:r.product_name,type:D2T[r.activity_type]||r.activity_type,desc:r.description,change:r.quantity_change,at:r.created_at});
+const row=(f,unit)=>({item_name:f.name,date_added:f.dateAdded,quantity:f.quantity,whole_price:f.wholePrice,selling_price:f.sellingPrice,received_status:R2D[f.received],unit_cost:f.quantity>0?f.wholePrice/f.quantity:unit});
+
+export async function fetchAll(){need();
+ const [p,h]=await Promise.all([supabase.from('products').select('*').order('created_at',{ascending:false}),supabase.from('inventory_history').select('*').order('created_at',{ascending:false}).limit(1000)]);
+ return{products:ok(p).filter(r=>r&&r.id).map(toProduct),history:ok(h).filter(r=>r&&r.id).map(toHistory)}}
+
+export async function addProduct(f){need();
+ const p=ok(await supabase.from('products').insert(row(f,0)).select().single());
+ ok(await supabase.from('inventory_history').insert({product_id:p.id,product_name:p.item_name,activity_type:'product_added',description:`Added with ${p.quantity} units`,quantity_change:p.quantity}))}
+
+export async function editProduct(o,f){need();
+ const u=ok(await supabase.from('products').update(row(f,o.unit)).eq('id',o.id).select('id'));if(!u.length)throw new Error(friendly({message:'not found'}));
+ const logs=[],log=(t,d,c=null)=>logs.push({product_id:o.id,product_name:f.name,activity_type:T2D[t],description:d,quantity_change:c});
+ if(f.sellingPrice!==o.sellingPrice)log('Selling Price Changed',`${peso(o.sellingPrice)} → ${peso(f.sellingPrice)}`);
+ if(f.received!==o.received)log('Received Status Changed',`${RECEIVED[o.received]} → ${RECEIVED[f.received]}`);
+ const ch=[];if(f.name!==o.name)ch.push(`name "${o.name}" → "${f.name}"`);if(f.quantity!==o.quantity)ch.push(`quantity ${o.quantity} → ${f.quantity}`);if(f.wholePrice!==o.wholePrice)ch.push(`whole price ${peso(o.wholePrice)} → ${peso(f.wholePrice)}`);if(f.dateAdded!==o.dateAdded)ch.push('date added');
+ if(ch.length||!logs.length)log('Product Edited',ch.length?'Changed '+ch.join(', '):'No field changes',f.quantity-o.quantity||null);
+ ok(await supabase.from('inventory_history').insert(logs))}
+
+export async function adjustStock(id,delta){need();ok(await supabase.rpc('adjust_stock',{p_id:id,p_delta:delta}))}
+export async function deleteProduct(id){need();ok(await supabase.rpc('delete_product',{p_id:id}))}
