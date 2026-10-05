@@ -1,5 +1,6 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import * as api from './api.js';
+import logo from '../logo/kerstinelogohd.jpg';
 import {supabase} from './supabase.js';
 import {LayoutDashboard,Boxes,History as HIcon,Menu as MenuI,Package,Layers,Wallet,TrendingUp,PiggyBank,Truck,Search,SlidersHorizontal,Plus,Trash2,Store,RotateCcw,ShoppingCart} from 'lucide-react';
 import {peso,calc,stockStatus,RECEIVED,ACTS,fmtDate,inRange,validate,today,PAYMENT_MODES} from './lib.js';
@@ -16,7 +17,7 @@ const blank={name:'',quantity:'',wholePrice:'',sellingPrice:'',received:'receive
 function ProductForm({init,onSave,onClose}){
  const [f,setF]=useState(init?{name:init.name,quantity:init.quantity,wholePrice:init.wholePrice,sellingPrice:init.sellingPrice,received:init.received,dateAdded:init.dateAdded,paid:init.paid,paymentMode:init.paymentMode,reference:init.reference}:blank);
  const [err,setErr]=useState({}),set=k=>e=>setF({...f,[k]:e.target.value});
- const q=Number(f.quantity)||0,w=Number(f.wholePrice)||0,s=Number(f.sellingPrice)||0,each=(q+(init?.sold||0))>0?w/(q+(init?.sold||0)):(init?.unit||0);
+ const q=Number(f.quantity)||0,w=Number(f.wholePrice)||0,s=Number(f.sellingPrice)||0,qi=q+(init?.sold||0),each=qi>0?w/qi:(init?.unit||0);
  const submit=e=>{e.preventDefault();const er=validate(f);setErr(er);if(!Object.keys(er).length)onSave({...f,name:f.name.trim(),quantity:+f.quantity,wholePrice:+f.wholePrice,sellingPrice:+f.sellingPrice})};
  return <Modal title={init?'Edit Product':'Add Product'} desc="Calculated values update automatically." onClose={onClose}><form onSubmit={submit} noValidate>
  <div className="grid2"><Field label="Item Name" error={err.name}><input value={f.name} onChange={set('name')} autoFocus/></Field>
@@ -28,7 +29,7 @@ function ProductForm({init,onSave,onClose}){
  <Field label="Payment Status"><select value={f.paid} onChange={set('paid')}><option value="not_paid">Not Paid</option><option value="paid">Paid</option></select></Field>
  <Field label="Mode of Payment" error={err.paymentMode}><select value={f.paymentMode} onChange={set('paymentMode')}><option value="">Select…</option>{Object.entries(PAYMENT_MODES).map(([k,l])=><option key={k} value={k}>{l}</option>)}</select></Field>
  <Field label="Reference Number (optional)" error={err.reference}><input value={f.reference} onChange={set('reference')} maxLength={60} placeholder="e.g. GCash ref no."/></Field></div>
- <div className="calc"><div><span className="muted xs">Price Each</span><b>{peso(each)}</b></div><div><span className="muted xs">Profit Each</span><b>{peso(s-each)}</b></div><div><span className="muted xs">Expected Sales</span><b>{peso(s*q)}</b></div><div><span className="muted xs">Expected Profit</span><b>{peso((s-each)*q)}</b></div></div>
+ <div className="calc"><div><span className="muted xs">Price Each</span><b>{peso(each)}</b></div><div><span className="muted xs">Profit Each</span><b>{peso(s-each)}</b></div><div><span className="muted xs">Expected Sales</span><b>{peso(s*qi)}</b></div><div><span className="muted xs">Expected Profit</span><b>{peso((s-each)*qi)}</b></div></div>
  <div className="actions"><Btn type="button" v="secondary" onClick={onClose}>Cancel</Btn><Btn type="submit">{init?'Save Changes':'Add Product'}</Btn></div></form></Modal>}
 
 export default function App(){
@@ -55,11 +56,11 @@ export default function App(){
  useEffect(()=>{if(modal&&modal.id&&!cur)setModal(null)},[modal,cur]);
  const NavI=([k,I,l])=><button key={k} className={`nav ${page===k?'on':''}`} aria-current={page===k?'page':undefined} onClick={()=>{setPage(k);setNav(false)}}><I size={18}/>{l}</button>;
  if(boot.loading||boot.error)return <div className="boot">{boot.loading?<div className="loading" role="status"><span className="spin"/>{{dashboard:'Loading dashboard…',inventory:'Loading products…',sales:'Loading sales…',history:'Loading history…'}[page]}</div>:<div className="card"><Empty title="Couldn't load inventory" desc={boot.error} action={<Btn onClick={()=>{setBoot({loading:true,error:''});refresh(true)}}>Try again</Btn>}/></div>}</div>;
- return <div className={`app ${saving?'saving':''}`}>{saving&&<div className="savebar" role="status" aria-label="Saving"/>}<aside className={`side ${nav?'open':''}`}><div className="brand"><span className="logo"><Store size={18}/></span><div><b>My Shop</b><div className="muted xs">Inventory</div></div></div>
+ return <div className={`app ${saving?'saving':''}`}>{saving&&<div className="savebar" role="status" aria-label="Saving"/>}<aside className={`side ${nav?'open':''}`}><div className="brand"><img className="logo-img" src={logo} alt="Kerstine Styles logo"/><div><b>Kerstine Styles</b><div className="muted xs">Inventory</div></div></div>
  <nav>{[['dashboard',LayoutDashboard,'Dashboard'],['inventory',Boxes,'Inventory'],['sales',ShoppingCart,'Sales'],['history',HIcon,'History']].map(NavI)}</nav>
  <div className="side-b"><p className="muted xs">Saved to Supabase and synced across your devices.</p></div></aside>
  {nav&&<div className="scrim" onClick={()=>setNav(false)}/>}
- <div className="main"><header className="top"><button className="icon" aria-label="Open menu" onClick={()=>setNav(true)}><MenuI size={20}/></button><b>My Shop</b></header>
+ <div className="main"><header className="top"><button className="icon" aria-label="Open menu" onClick={()=>setNav(true)}><MenuI size={20}/></button><img className="logo-img" src={logo} alt=""/><b>Kerstine Styles</b></header>
  <main>{page==='dashboard'&&<Dashboard items={items} history={history} summary={summary} open={id=>setModal({k:'view',id})} go={setPage}/>}
  {page==='inventory'&&<InventoryPage items={items} open={id=>setModal({k:'view',id})} act={act} add={()=>setModal({k:'add'})}/>}
  {page==='sales'&&<SalesPage items={items} sales={sales} onSell={sell}/>}

@@ -23,7 +23,7 @@ export default function Dashboard({items,history,summary,open,go}){
   <SummaryCard icon={Package} tone="pink" label="Total Products" value={list.length} sub={`${list.filter(p=>p.quantity<20).length} low or out of stock`}/>
   <SummaryCard icon={Layers} tone="blue" label="Total Quantity" value={t.q.toLocaleString('en-PH')} sub="units across all products"/>
   <SummaryCard icon={Wallet} tone="blue" label="Total Inventory Cost" value={peso(t.c)} sub="what your stock cost you"/>
-  <SummaryCard icon={TrendingUp} tone="pink" label="Expected Sales" value={peso(t.s)} sub="if all stock sells"/>
+  <SummaryCard icon={TrendingUp} tone="pink" label="Expected Sales" value={peso(t.s)} sub="on your full initial stock"/>
   <SummaryCard icon={PiggyBank} tone="pink" label="Expected Profit" value={peso(t.p)} sub={`about ${margin}% margin`}/>
   <SummaryCard icon={Truck} tone="blue" label="Products Not Received" value={notRec.length} sub={partial?`${partial} more partially received`:'waiting for delivery'}/>
   <SummaryCard icon={ShoppingCart} tone="pink" label="Units Sold" value={(summary?.units||0).toLocaleString('en-PH')} sub="from recorded sales"/>
