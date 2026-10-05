@@ -1,8 +1,9 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import * as api from './api.js';
+import Login from './Login.jsx';
 import logo from '../logo/kerstinelogohd.jpg';
 import {supabase} from './supabase.js';
-import {LayoutDashboard,Boxes,History as HIcon,Menu as MenuI,Package,Layers,Wallet,TrendingUp,PiggyBank,Truck,Search,SlidersHorizontal,Plus,Trash2,Store,RotateCcw,ShoppingCart} from 'lucide-react';
+import {LayoutDashboard,Boxes,History as HIcon,Menu as MenuI,Package,Layers,Wallet,TrendingUp,PiggyBank,Truck,Search,SlidersHorizontal,Plus,Trash2,Store,RotateCcw,ShoppingCart,LogOut} from 'lucide-react';
 import {peso,calc,stockStatus,RECEIVED,ACTS,fmtDate,inRange,validate,today,PAYMENT_MODES} from './lib.js';
 import Dashboard from './dashboard/Dashboard.jsx';
 import {Btn,Modal,Confirm,Field,ReceivedBadge,StockBadge,SummaryCard,Empty,Timeline,Menu,DateFilter,DF} from './ui.jsx';
@@ -32,7 +33,7 @@ function ProductForm({init,onSave,onClose}){
  <div className="calc"><div><span className="muted xs">Price Each</span><b>{peso(each)}</b></div><div><span className="muted xs">Profit Each</span><b>{peso(s-each)}</b></div><div><span className="muted xs">Expected Sales</span><b>{peso(s*qi)}</b></div><div><span className="muted xs">Expected Profit</span><b>{peso((s-each)*qi)}</b></div></div>
  <div className="actions"><Btn type="button" v="secondary" onClick={onClose}>Cancel</Btn><Btn type="submit">{init?'Save Changes':'Add Product'}</Btn></div></form></Modal>}
 
-export default function App(){
+function Shop({onSignOut}){
  const [products,setProducts]=useState([]),[history,setHistory]=useState([]),[sales,setSales]=useState([]),[summary,setSummary]=useState({units:0,revenue:0,profit:0}),[boot,setBoot]=useState({loading:true,error:''}),busy=useRef(false),[saving,setSaving]=useState(false);
  const [page,setPage]=useState('dashboard'),[nav,setNav]=useState(false),[modal,setModal]=useState(null),[toast,setToast]=useState('');
  const refresh=useCallback(async first=>{try{const d=await api.fetchAll();setProducts(d.products);setHistory(d.history);setSales(d.sales);setSummary(d.summary);setBoot({loading:false,error:''})}catch(e){first?setBoot({loading:false,error:e.message}):setToast('Could not refresh: '+e.message)}},[]);
@@ -58,7 +59,7 @@ export default function App(){
  if(boot.loading||boot.error)return <div className="boot">{boot.loading?<div className="loading" role="status"><span className="spin"/>{{dashboard:'Loading dashboard…',inventory:'Loading products…',sales:'Loading sales…',history:'Loading history…'}[page]}</div>:<div className="card"><Empty title="Couldn't load inventory" desc={boot.error} action={<Btn onClick={()=>{setBoot({loading:true,error:''});refresh(true)}}>Try again</Btn>}/></div>}</div>;
  return <div className={`app ${saving?'saving':''}`}>{saving&&<div className="savebar" role="status" aria-label="Saving"/>}<aside className={`side ${nav?'open':''}`}><div className="brand"><img className="logo-img" src={logo} alt="Kerstine Styles logo"/><div><b>Kerstine Styles</b><div className="muted xs">Inventory</div></div></div>
  <nav>{[['dashboard',LayoutDashboard,'Dashboard'],['inventory',Boxes,'Inventory'],['sales',ShoppingCart,'Sales'],['history',HIcon,'History']].map(NavI)}</nav>
- <div className="side-b"><p className="muted xs">Saved to Supabase and synced across your devices.</p></div></aside>
+ <div className="side-b"><button className="nav" onClick={onSignOut}><LogOut size={18}/>Sign out</button><p className="muted xs">Saved to Supabase and synced across your devices.</p></div></aside>
  {nav&&<div className="scrim" onClick={()=>setNav(false)}/>}
  <div className="main"><header className="top"><button className="icon" aria-label="Open menu" onClick={()=>setNav(true)}><MenuI size={20}/></button><img className="logo-img" src={logo} alt=""/><b>Kerstine Styles</b></header>
  <main>{page==='dashboard'&&<Dashboard items={items} history={history} summary={summary} open={id=>setModal({k:'view',id})} go={setPage}/>}
@@ -71,3 +72,10 @@ export default function App(){
  {modal?.k==='view'&&cur&&<Details p={cur} history={history.filter(h=>h.productId===cur.id)} act={(k,x)=>setModal({k:k==='add'?'add_stock':k,id:x.id,back:true})} onClose={()=>setModal(null)}/>}
  {modal?.k==='delete'&&cur&&<Confirm title="Delete Product?" desc={`Are you sure you want to delete this product? "${cur.name}" will be removed. This action cannot be undone.`} label="Delete" onYes={()=>del(cur)} onClose={closeM}/>}
  {toast&&<div className="toast" role="status">{toast}</div>}</div>}
+
+export default function App(){
+ const [session,setSession]=useState(undefined);
+ useEffect(()=>{if(!supabase){setSession(null);return}api.getSession().then(setSession).catch(()=>setSession(null));const sub=api.onAuthChange(setSession);return()=>sub.unsubscribe()},[]);
+ if(session===undefined)return <div className="boot"><div className="loading" role="status"><span className="spin"/>Loading…</div></div>;
+ if(!session)return <Login/>;
+ return <Shop key={session.user.id} onSignOut={api.signOut}/>}

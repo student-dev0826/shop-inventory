@@ -33,3 +33,9 @@ export async function editProduct(o,f){need();
 export async function adjustStock(id,delta){need();ok(await supabase.rpc('adjust_stock',{p_id:id,p_delta:delta}))}
 export async function deleteProduct(id){need();ok(await supabase.rpc('delete_product',{p_id:id}))}
 export async function recordSale(id,qty,method){need();ok(await supabase.rpc('record_sale',{p_id:id,p_qty:qty,p_method:method}))}
+
+// Sign-in only. There is no sign-up in the app, and sign-ups are switched off in Supabase.
+export async function getSession(){need();const {data}=await supabase.auth.getSession();return data.session}
+export const onAuthChange=cb=>{need();return supabase.auth.onAuthStateChange((_e,s)=>cb(s)).data.subscription};
+export async function signIn(email,password){need();const {error}=await supabase.auth.signInWithPassword({email,password});if(error){console.error(error);throw new Error(/fetch|network/i.test(error.message)?friendly(error):'Incorrect email or password.')}}
+export const signOut=()=>supabase?.auth.signOut();

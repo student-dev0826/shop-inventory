@@ -72,3 +72,4 @@ input,select{font:inherit;width:100%;padding:10px 12px;border:1px solid var(--bd
 .det b{overflow-wrap:anywhere}@media(min-width:901px){.fpanel{grid-template-columns:repeat(5,auto)}}
 .tw table{min-width:1240px}
 .logo-img{width:40px;height:40px;border-radius:10px;object-fit:cover;flex:none;border:1px solid var(--bd);background:#fff}.top .logo-img{width:30px;height:30px;border-radius:8px}.top{gap:10px}
+.login{width:100%;max-width:380px;text-align:left}.login .brand{padding:0 0 16px}.login .wide{width:100%;margin-top:6px}
