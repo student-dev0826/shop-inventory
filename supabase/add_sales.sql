@@ -35,7 +35,7 @@ begin
   if not found then raise exception 'Product not found'; end if;
   if p_qty > p.quantity then raise exception 'Cannot sell more than the available stock (%)', p.quantity; end if;
   nq := p.quantity - p_qty;
-  update public.products set quantity = nq, sold_quantity = sold_quantity + p_qty, whole_price = round(unit_cost * nq, 2) where id = p_id;
+  update public.products set quantity = nq, sold_quantity = sold_quantity + p_qty where id = p_id;
   insert into public.sales (product_id, product_name, quantity, unit_price, unit_cost, total, payment_method)
   values (p_id, p.item_name, p_qty, p.selling_price, p.unit_cost, p.selling_price * p_qty, p_method);
   insert into public.inventory_history (product_id, product_name, activity_type, description, quantity_change)

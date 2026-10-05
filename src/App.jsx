@@ -16,7 +16,7 @@ const blank={name:'',quantity:'',wholePrice:'',sellingPrice:'',received:'receive
 function ProductForm({init,onSave,onClose}){
  const [f,setF]=useState(init?{name:init.name,quantity:init.quantity,wholePrice:init.wholePrice,sellingPrice:init.sellingPrice,received:init.received,dateAdded:init.dateAdded,paid:init.paid,paymentMode:init.paymentMode,reference:init.reference}:blank);
  const [err,setErr]=useState({}),set=k=>e=>setF({...f,[k]:e.target.value});
- const q=Number(f.quantity)||0,w=Number(f.wholePrice)||0,s=Number(f.sellingPrice)||0,each=q>0?w/q:(init?.unit||0);
+ const q=Number(f.quantity)||0,w=Number(f.wholePrice)||0,s=Number(f.sellingPrice)||0,each=(q+(init?.sold||0))>0?w/(q+(init?.sold||0)):(init?.unit||0);
  const submit=e=>{e.preventDefault();const er=validate(f);setErr(er);if(!Object.keys(er).length)onSave({...f,name:f.name.trim(),quantity:+f.quantity,wholePrice:+f.wholePrice,sellingPrice:+f.sellingPrice})};
  return <Modal title={init?'Edit Product':'Add Product'} desc="Calculated values update automatically." onClose={onClose}><form onSubmit={submit} noValidate>
  <div className="grid2"><Field label="Item Name" error={err.name}><input value={f.name} onChange={set('name')} autoFocus/></Field>

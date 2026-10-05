@@ -9,7 +9,7 @@ const ok=({data,error})=>{if(error){console.error(error);throw new Error(friendl
 const toProduct=r=>({id:r.id,name:r.item_name,dateAdded:r.date_added,quantity:Math.max(0,+r.quantity||0),wholePrice:+r.whole_price||0,sellingPrice:+r.selling_price||0,unit:+r.unit_cost||0,received:D2R[r.received_status]||'not',paid:r.payment_status==='paid'?'paid':'not_paid',paymentMode:r.payment_mode||'',reference:r.payment_reference||'',sold:Math.max(0,+r.sold_quantity||0),createdAt:r.created_at,updatedAt:r.updated_at});
 const toSale=r=>({id:r.id,productId:r.product_id,productName:r.product_name,quantity:r.quantity,total:+r.total||0,method:r.payment_method,at:r.created_at});
 const toHistory=r=>({id:r.id,productId:r.product_id,productName:r.product_name,type:D2T[r.activity_type]||r.activity_type,desc:r.description,change:r.quantity_change,at:r.created_at});
-const row=(f,unit)=>({item_name:f.name,date_added:f.dateAdded,quantity:f.quantity,whole_price:f.wholePrice,selling_price:f.sellingPrice,received_status:R2D[f.received],payment_status:f.paid==='paid'?'paid':'not_paid',payment_mode:f.paymentMode||null,payment_reference:f.reference?.trim()||null,unit_cost:f.quantity>0?f.wholePrice/f.quantity:unit});
+const row=(f,unit,sold=0)=>({item_name:f.name,date_added:f.dateAdded,quantity:f.quantity,whole_price:f.wholePrice,selling_price:f.sellingPrice,received_status:R2D[f.received],payment_status:f.paid==='paid'?'paid':'not_paid',payment_mode:f.paymentMode||null,payment_reference:f.reference?.trim()||null,unit_cost:(f.quantity+sold)>0?f.wholePrice/(f.quantity+sold):unit});
 
 export async function fetchAll(){need();
  const [p,h,s,t]=await Promise.all([supabase.from('products').select('*').order('created_at',{ascending:false}),supabase.from('inventory_history').select('*').order('created_at',{ascending:false}).limit(1000),supabase.from('sales').select('*').order('created_at',{ascending:false}).limit(50),supabase.rpc('sales_summary')]);
@@ -21,7 +21,7 @@ export async function addProduct(f){need();
  ok(await supabase.from('inventory_history').insert({product_id:p.id,product_name:p.item_name,activity_type:'product_added',description:`Added with ${p.quantity} units`,quantity_change:p.quantity}))}
 
 export async function editProduct(o,f){need();
- const u=ok(await supabase.from('products').update(row(f,o.unit)).eq('id',o.id).select('id'));if(!u.length)throw new Error(friendly({message:'not found'}));
+ const u=ok(await supabase.from('products').update(row(f,o.unit,o.sold)).eq('id',o.id).select('id'));if(!u.length)throw new Error(friendly({message:'not found'}));
  const logs=[],log=(t,d,c=null)=>logs.push({product_id:o.id,product_name:f.name,activity_type:T2D[t],description:d,quantity_change:c});
  if(f.sellingPrice!==o.sellingPrice)log('Selling Price Changed',`${peso(o.sellingPrice)} → ${peso(f.sellingPrice)}`);
  if(f.received!==o.received)log('Received Status Changed',`${RECEIVED[o.received]} → ${RECEIVED[f.received]}`);
