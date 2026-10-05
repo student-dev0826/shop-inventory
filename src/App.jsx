@@ -1,13 +1,14 @@
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import * as api from './api.js';
 import {supabase} from './supabase.js';
-import {LayoutDashboard,Boxes,History as HIcon,Menu as MenuI,Package,Layers,Wallet,TrendingUp,PiggyBank,Truck,Search,SlidersHorizontal,Plus,Trash2,Store,RotateCcw} from 'lucide-react';
+import {LayoutDashboard,Boxes,History as HIcon,Menu as MenuI,Package,Layers,Wallet,TrendingUp,PiggyBank,Truck,Search,SlidersHorizontal,Plus,Trash2,Store,RotateCcw,ShoppingCart} from 'lucide-react';
 import {peso,calc,stockStatus,RECEIVED,ACTS,fmtDate,inRange,validate,today,PAYMENT_MODES} from './lib.js';
 import Dashboard from './dashboard/Dashboard.jsx';
 import {Btn,Modal,Confirm,Field,ReceivedBadge,StockBadge,SummaryCard,Empty,Timeline,Menu,DateFilter,DF} from './ui.jsx';
 import StockModal from './products/StockModal.jsx';
 import Details from './products/ProductDetails.jsx';
 import HistoryPage from './history/HistoryPage.jsx';
+import SalesPage from './sales/SalesPage.jsx';
 import InventoryPage from './inventory/InventoryPage.jsx';
 
 const blank={name:'',quantity:'',wholePrice:'',sellingPrice:'',received:'received',dateAdded:today(),paid:'not_paid',paymentMode:'',reference:''};
@@ -31,9 +32,9 @@ function ProductForm({init,onSave,onClose}){
  <div className="actions"><Btn type="button" v="secondary" onClick={onClose}>Cancel</Btn><Btn type="submit">{init?'Save Changes':'Add Product'}</Btn></div></form></Modal>}
 
 export default function App(){
- const [products,setProducts]=useState([]),[history,setHistory]=useState([]),[boot,setBoot]=useState({loading:true,error:''}),busy=useRef(false),[saving,setSaving]=useState(false);
+ const [products,setProducts]=useState([]),[history,setHistory]=useState([]),[sales,setSales]=useState([]),[summary,setSummary]=useState({units:0,revenue:0,profit:0}),[boot,setBoot]=useState({loading:true,error:''}),busy=useRef(false),[saving,setSaving]=useState(false);
  const [page,setPage]=useState('dashboard'),[nav,setNav]=useState(false),[modal,setModal]=useState(null),[toast,setToast]=useState('');
- const refresh=useCallback(async first=>{try{const d=await api.fetchAll();setProducts(d.products);setHistory(d.history);setBoot({loading:false,error:''})}catch(e){first?setBoot({loading:false,error:e.message}):setToast('Could not refresh: '+e.message)}},[]);
+ const refresh=useCallback(async first=>{try{const d=await api.fetchAll();setProducts(d.products);setHistory(d.history);setSales(d.sales);setSummary(d.summary);setBoot({loading:false,error:''})}catch(e){first?setBoot({loading:false,error:e.message}):setToast('Could not refresh: '+e.message)}},[]);
  useEffect(()=>{refresh(true);const v=()=>document.visibilityState==='visible'&&refresh();document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[refresh]);
  useEffect(()=>{if(!supabase)return;let t;const kick=()=>{clearTimeout(t);t=setTimeout(()=>refresh(),300)};
   const ch=supabase.channel('inventory-sync').on('postgres_changes',{event:'*',schema:'public',table:'products'},kick).on('postgres_changes',{event:'*',schema:'public',table:'inventory_history'},kick).subscribe();
@@ -42,24 +43,26 @@ export default function App(){
  const ret=()=>modal?.back?{k:'view',id:modal.id}:null;
  const items=useMemo(()=>products.map(calc),[products]);
  const find=id=>items.find(p=>p.id===id);
- const run=async(fn,msg,m=null)=>{if(busy.current)return;busy.current=true;setSaving(true);try{await fn();await refresh();setModal(m);setToast(msg)}catch(e){setToast('Something went wrong: '+e.message);refresh()}finally{busy.current=false;setSaving(false)}};
+ const run=async(fn,msg,m=null)=>{if(busy.current)return false;busy.current=true;setSaving(true);try{await fn();await refresh();setModal(m);setToast(msg);return true}catch(e){setToast('Something went wrong: '+e.message);refresh();return false}finally{busy.current=false;setSaving(false)}};
  const addP=f=>run(()=>api.addProduct(f),'Product added successfully.');
  const editP=(o,f)=>run(()=>api.editProduct(o,f),f.received!==o.received&&f.name===o.name&&f.quantity===o.quantity&&f.wholePrice===o.wholePrice&&f.sellingPrice===o.sellingPrice&&f.dateAdded===o.dateAdded&&f.paid===o.paid&&f.paymentMode===o.paymentMode&&f.reference===o.reference?'Received status updated.':'Product updated successfully.',ret());
  const stock=(p,v,add)=>run(()=>api.adjustStock(p.id,add?v:-v),add?'Stock added successfully.':'Stock removed successfully.',ret());
+ const sell=(p,qty,method)=>run(()=>api.recordSale(p.id,qty,method),'Sale recorded successfully.');
  const del=p=>run(()=>api.deleteProduct(p.id),'Product deleted successfully.');
  const act=(k,p)=>setModal({k:k==='add'?'add_stock':k,id:p.id});
  const cur=modal&&modal.id?find(modal.id):null;
  const closeM=()=>setModal(modal?.back&&cur?{k:'view',id:modal.id}:null);
  useEffect(()=>{if(modal&&modal.id&&!cur)setModal(null)},[modal,cur]);
  const NavI=([k,I,l])=><button key={k} className={`nav ${page===k?'on':''}`} aria-current={page===k?'page':undefined} onClick={()=>{setPage(k);setNav(false)}}><I size={18}/>{l}</button>;
- if(boot.loading||boot.error)return <div className="boot">{boot.loading?<div className="loading" role="status"><span className="spin"/>{{dashboard:'Loading dashboard…',inventory:'Loading products…',history:'Loading history…'}[page]}</div>:<div className="card"><Empty title="Couldn't load inventory" desc={boot.error} action={<Btn onClick={()=>{setBoot({loading:true,error:''});refresh(true)}}>Try again</Btn>}/></div>}</div>;
+ if(boot.loading||boot.error)return <div className="boot">{boot.loading?<div className="loading" role="status"><span className="spin"/>{{dashboard:'Loading dashboard…',inventory:'Loading products…',sales:'Loading sales…',history:'Loading history…'}[page]}</div>:<div className="card"><Empty title="Couldn't load inventory" desc={boot.error} action={<Btn onClick={()=>{setBoot({loading:true,error:''});refresh(true)}}>Try again</Btn>}/></div>}</div>;
  return <div className={`app ${saving?'saving':''}`}>{saving&&<div className="savebar" role="status" aria-label="Saving"/>}<aside className={`side ${nav?'open':''}`}><div className="brand"><span className="logo"><Store size={18}/></span><div><b>My Shop</b><div className="muted xs">Inventory</div></div></div>
- <nav>{[['dashboard',LayoutDashboard,'Dashboard'],['inventory',Boxes,'Inventory'],['history',HIcon,'History']].map(NavI)}</nav>
+ <nav>{[['dashboard',LayoutDashboard,'Dashboard'],['inventory',Boxes,'Inventory'],['sales',ShoppingCart,'Sales'],['history',HIcon,'History']].map(NavI)}</nav>
  <div className="side-b"><p className="muted xs">Saved to Supabase and synced across your devices.</p></div></aside>
  {nav&&<div className="scrim" onClick={()=>setNav(false)}/>}
  <div className="main"><header className="top"><button className="icon" aria-label="Open menu" onClick={()=>setNav(true)}><MenuI size={20}/></button><b>My Shop</b></header>
- <main>{page==='dashboard'&&<Dashboard items={items} history={history} open={id=>setModal({k:'view',id})} go={setPage}/>}
+ <main>{page==='dashboard'&&<Dashboard items={items} history={history} summary={summary} open={id=>setModal({k:'view',id})} go={setPage}/>}
  {page==='inventory'&&<InventoryPage items={items} open={id=>setModal({k:'view',id})} act={act} add={()=>setModal({k:'add'})}/>}
+ {page==='sales'&&<SalesPage items={items} sales={sales} onSell={sell}/>}
  {page==='history'&&<HistoryPage history={history} has={id=>!!find(id)} open={id=>setModal({k:'view',id})}/>}</main></div>
  {modal?.k==='add'&&<ProductForm onSave={addP} onClose={()=>setModal(null)}/>}
  {modal?.k==='edit'&&cur&&<ProductForm init={cur} onSave={f=>editP(cur,f)} onClose={closeM}/>}

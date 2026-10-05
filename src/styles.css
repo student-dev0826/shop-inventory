@@ -70,3 +70,4 @@ input,select{font:inherit;width:100%;padding:10px 12px;border:1px solid var(--bd
  .bar select,.bar .dfl,.bar .btn{flex:1 1 100%}.dfl select,.dfl input{min-width:0;flex:1 1 100%}.ph .btn{width:100%}.sum{padding:14px}.big{font-size:20px}.calc{grid-template-columns:1fr 1fr}.actions.wrap .btn{flex:1 1 100%}}
 @media(max-width:360px){main{padding:16px 12px}.cards,.dash-grid{gap:12px}}
 .det b{overflow-wrap:anywhere}@media(min-width:901px){.fpanel{grid-template-columns:repeat(5,auto)}}
+.tw table{min-width:1240px}

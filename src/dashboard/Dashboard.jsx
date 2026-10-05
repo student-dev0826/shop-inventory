@@ -1,4 +1,4 @@
-import {Package,Layers,Wallet,TrendingUp,PiggyBank,Truck} from 'lucide-react';
+import {Package,Layers,Wallet,TrendingUp,PiggyBank,Truck,ShoppingCart,Coins} from 'lucide-react';
 import {peso,fmtDate} from '../lib.js';
 import {SummaryCard,StockBadge,ReceivedBadge,Timeline,Empty} from '../ui.jsx';
 
@@ -7,7 +7,7 @@ const ProductList=({rows,onOpen,badges,empty})=>rows.length?<ul className="plist
  <div className="pmain"><button className="link" onClick={()=>onOpen(p.id)}>{p.name}</button><span className="muted xs">Added {fmtDate(p.dateAdded+'T12:00:00')} · {peso(p.sellingPrice)} each</span></div>
  <div className="pmeta"><span className="qty">{p.quantity} pcs</span>{badges(p)}</div></li>)}</ul>:<Empty title="Nothing here" desc={empty}/>;
 
-export default function Dashboard({items,history,open,go}){
+export default function Dashboard({items,history,summary,open,go}){
  const src={items,history};
  const onOpen=open;
  const list=src.items,t=list.reduce((a,p)=>({q:a.q+p.quantity,c:a.c+p.priceEach*p.quantity,s:a.s+p.expectedSales,p:a.p+p.expectedProfit}),{q:0,c:0,s:0,p:0});
@@ -26,6 +26,9 @@ export default function Dashboard({items,history,open,go}){
   <SummaryCard icon={TrendingUp} tone="pink" label="Expected Sales" value={peso(t.s)} sub="if all stock sells"/>
   <SummaryCard icon={PiggyBank} tone="pink" label="Expected Profit" value={peso(t.p)} sub={`about ${margin}% margin`}/>
   <SummaryCard icon={Truck} tone="blue" label="Products Not Received" value={notRec.length} sub={partial?`${partial} more partially received`:'waiting for delivery'}/>
+  <SummaryCard icon={ShoppingCart} tone="pink" label="Units Sold" value={(summary?.units||0).toLocaleString('en-PH')} sub="from recorded sales"/>
+  <SummaryCard icon={Coins} tone="blue" label="Total Sales" value={peso(summary?.revenue||0)} sub="money from sales"/>
+  <SummaryCard icon={TrendingUp} tone="blue" label="Sales Profit" value={peso(summary?.profit||0)} sub="sales minus item cost"/>
  </div>
  <div className="dash-grid">
   <Section title="Recent Products" action={viewAll}><ProductList rows={recent} onOpen={onOpen} empty="Add a product to see it here." badges={p=><><StockBadge q={p.quantity}/><ReceivedBadge v={p.received}/></>}/></Section>

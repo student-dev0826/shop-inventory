@@ -3,12 +3,12 @@ export const peso=n=>'₱'+(Number.isFinite(n)?n:0).toLocaleString('en-PH',{mini
 const num=v=>{const n=Number(v);return Number.isFinite(n)?n:0};
 export const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 export const today=()=>new Date().toISOString().slice(0,10);
-export const calc=p=>{const q=num(p.quantity),s=num(p.sellingPrice),u=q>0?num(p.wholePrice)/q:num(p.unit),pe=s-u;return{...p,quantity:q,priceEach:u,profitEach:pe,expectedSales:s*q,expectedProfit:pe*q}};
+export const calc=p=>{const q=num(p.quantity),s=num(p.sellingPrice),u=q>0?num(p.wholePrice)/q:num(p.unit),pe=s-u;return{...p,quantity:q,sold:num(p.sold),initial:q+num(p.sold),priceEach:u,profitEach:pe,expectedSales:s*q,expectedProfit:pe*q}};
 export const stockStatus=q=>q>=20?{label:'Normal',cls:'b-green'}:q>=5?{label:'Low Stock',cls:'b-pink'}:q>=1?{label:'Very Low',cls:'b-orange'}:{label:'Out of Stock',cls:'b-red'};
-export const PAYMENT_MODES={cash:'Cash',gcash:'GCash',maya:'Maya',bank:'Bank Transfer',card:'Credit/Debit Card',other:'Other'};
+export const PAYMENT_MODES={cash:'Cash',gcash:'GCash',gotyme:'Gotyme',maribank:'Maribank',other:'Other'};
 export const PAID_STATUS={paid:'Paid',not_paid:'Not Paid'};
 export const RECEIVED={received:'Received',partial:'Partially Received',not:'Not Received'};
-export const ACTS=['Product Added','Stock Added','Stock Removed','Product Edited','Selling Price Changed','Received Status Changed','Product Deleted'];
+export const ACTS=['Product Added','Stock Added','Stock Removed','Product Edited','Selling Price Changed','Received Status Changed','Product Deleted','Sale Recorded'];
 export const fmtDate=d=>new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
 export const fmtTime=d=>new Date(d).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
 export function inRange(date,f){if(!f||f.mode==='all')return true;const d=new Date(date),n=new Date(),sod=new Date(n.getFullYear(),n.getMonth(),n.getDate());
