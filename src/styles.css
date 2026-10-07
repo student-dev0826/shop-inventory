@@ -190,3 +190,6 @@ tbody tr:hover{background:rgba(188,222,251,.22)}
 .count{background:var(--blue);color:#1F4F7C}
 .toast{background:rgba(30,45,66,.9)}
 @media(prefers-reduced-transparency:reduce){.card,.side,.top,.modal,.menu{background:#fff}}
+.toast-undo{background:none;border:0;color:#FBBCF9;font:inherit;font-weight:700;margin-left:14px;cursor:pointer;text-decoration:underline;padding:0}
+.toast{display:flex;align-items:center;justify-content:center}
+.modal .plist{margin-top:4px}

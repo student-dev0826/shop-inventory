@@ -35,23 +35,25 @@ function ProductForm({init,onSave,onClose}){
  <div className="actions"><Btn type="button" v="secondary" onClick={onClose}>Cancel</Btn><Btn type="submit">{init?'Save Changes':'Add Product'}</Btn></div></form></Modal>}
 
 function Shop({onSignOut}){
- const [products,setProducts]=useState([]),[history,setHistory]=useState([]),[sales,setSales]=useState([]),[summary,setSummary]=useState({units:0,revenue:0,profit:0}),[boot,setBoot]=useState({loading:true,error:''}),busy=useRef(false),[saving,setSaving]=useState(false);
+ const [products,setProducts]=useState([]),[history,setHistory]=useState([]),[sales,setSales]=useState([]),[trash,setTrash]=useState([]),[undo,setUndo]=useState(null),[summary,setSummary]=useState({units:0,revenue:0,profit:0}),[boot,setBoot]=useState({loading:true,error:''}),busy=useRef(false),[saving,setSaving]=useState(false);
  const [page,setPage]=useState('dashboard'),[nav,setNav]=useState(false),[modal,setModal]=useState(null),[toast,setToast]=useState('');
- const refresh=useCallback(async first=>{try{const d=await api.fetchAll();setProducts(d.products);setHistory(d.history);setSales(d.sales);setSummary(d.summary);setBoot({loading:false,error:''})}catch(e){first?setBoot({loading:false,error:e.message}):setToast('Could not refresh: '+e.message)}},[]);
+ const refresh=useCallback(async first=>{try{const d=await api.fetchAll();setProducts(d.products);setTrash(d.trash);setHistory(d.history);setSales(d.sales);setSummary(d.summary);setBoot({loading:false,error:''})}catch(e){first?setBoot({loading:false,error:e.message}):setToast('Could not refresh: '+e.message)}},[]);
  useEffect(()=>{refresh(true);const v=()=>document.visibilityState==='visible'&&refresh();document.addEventListener('visibilitychange',v);return()=>document.removeEventListener('visibilitychange',v)},[refresh]);
  useEffect(()=>{if(!supabase)return;let t;const kick=()=>{clearTimeout(t);t=setTimeout(()=>refresh(),300)};
   const ch=supabase.channel('inventory-sync').on('postgres_changes',{event:'*',schema:'public',table:'products'},kick).on('postgres_changes',{event:'*',schema:'public',table:'inventory_history'},kick).subscribe();
   return()=>{clearTimeout(t);supabase.removeChannel(ch)}},[refresh]);
- useEffect(()=>{if(!toast)return;const t=setTimeout(()=>setToast(''),2500);return()=>clearTimeout(t)},[toast]);
+ useEffect(()=>{if(!toast)return;const t=setTimeout(()=>{setToast('');setUndo(null)},undo?8000:2500);return()=>clearTimeout(t)},[toast,undo]);
  const ret=()=>modal?.back?{k:'view',id:modal.id}:null;
  const items=useMemo(()=>products.map(calc),[products]);
  const find=id=>items.find(p=>p.id===id);
- const run=async(fn,msg,m=null)=>{if(busy.current)return false;busy.current=true;setSaving(true);try{await fn();await refresh();setModal(m);setToast(msg);return true}catch(e){setToast('Something went wrong: '+e.message);refresh();return false}finally{busy.current=false;setSaving(false)}};
+ const run=async(fn,msg,m=null)=>{if(busy.current)return false;busy.current=true;setSaving(true);setUndo(null);try{await fn();await refresh();setModal(m);setToast(msg);return true}catch(e){setToast('Something went wrong: '+e.message);refresh();return false}finally{busy.current=false;setSaving(false)}};
  const addP=f=>run(()=>api.addProduct(f),'Product added successfully.');
  const editP=(o,f)=>run(()=>api.editProduct(o,f),f.received!==o.received&&f.name===o.name&&f.category===(o.category||'')&&f.quantity===o.quantity&&f.wholePrice===o.wholePrice&&f.sellingPrice===o.sellingPrice&&f.dateAdded===o.dateAdded&&f.paid===o.paid&&f.paymentMode===o.paymentMode&&f.reference===o.reference?'Received status updated.':'Product updated successfully.',ret());
  const stock=(p,v,add)=>run(()=>api.adjustStock(p.id,add?v:-v),add?'Stock added successfully.':'Stock removed successfully.',ret());
  const sell=(p,qty,method)=>run(()=>api.recordSale(p.id,qty,method),'Sale recorded successfully.');
- const del=p=>run(()=>api.deleteProduct(p.id),'Product deleted successfully.');
+ const del=async p=>{if(await run(()=>api.deleteProduct(p.id),'Product deleted.'))setUndo({id:p.id,name:p.name})};
+ const restore=(p,m=null)=>run(()=>api.restoreProduct(p.id),`"${p.name}" restored.`,m);
+ const purge=p=>run(()=>api.purgeProduct(p.id),'Deleted forever.',{k:'trash'});
  const act=(k,p)=>setModal({k:k==='add'?'add_stock':k,id:p.id});
  const cur=modal&&modal.id?find(modal.id):null;
  const closeM=()=>setModal(modal?.back&&cur?{k:'view',id:modal.id}:null);
@@ -64,15 +66,19 @@ function Shop({onSignOut}){
  {nav&&<div className="scrim" onClick={()=>setNav(false)}/>}
  <div className="main"><header className="top"><button className="icon" aria-label="Open menu" onClick={()=>setNav(true)}><MenuI size={20}/></button><img className="logo-img" src={logo} alt=""/><b>Kerstine Styles</b></header>
  <main>{page==='dashboard'&&<Dashboard items={items} history={history} summary={summary} open={id=>setModal({k:'view',id})} go={setPage}/>}
- {page==='inventory'&&<InventoryPage items={items} open={id=>setModal({k:'view',id})} act={act} add={()=>setModal({k:'add'})}/>}
+ {page==='inventory'&&<InventoryPage items={items} open={id=>setModal({k:'view',id})} act={act} add={()=>setModal({k:'add'})} trashCount={trash.length} onTrash={()=>setModal({k:'trash'})}/>}
  {page==='sales'&&<SalesPage items={items} sales={sales} onSell={sell}/>}
  {page==='history'&&<HistoryPage history={history} has={id=>!!find(id)} open={id=>setModal({k:'view',id})}/>}</main></div>
  {modal?.k==='add'&&<ProductForm onSave={addP} onClose={()=>setModal(null)}/>}
  {modal?.k==='edit'&&cur&&<ProductForm init={cur} onSave={f=>editP(cur,f)} onClose={closeM}/>}
  {(modal?.k==='add_stock'||modal?.k==='remove')&&cur&&<StockModal p={cur} mode={modal.k==='remove'?'remove':'add'} onSave={v=>stock(cur,v,modal.k!=='remove')} onClose={closeM}/>}
  {modal?.k==='view'&&cur&&<Details p={cur} history={history.filter(h=>h.productId===cur.id)} act={(k,x)=>setModal({k:k==='add'?'add_stock':k,id:x.id,back:true})} onClose={()=>setModal(null)}/>}
- {modal?.k==='delete'&&cur&&<Confirm title="Delete Product?" desc={`Are you sure you want to delete this product? "${cur.name}" will be removed. This action cannot be undone.`} label="Delete" onYes={()=>del(cur)} onClose={closeM}/>}
- {toast&&<div className="toast" role="status">{toast}</div>}</div>}
+ {modal?.k==='delete'&&cur&&<Confirm title="Delete Product?" desc={`Are you sure you want to delete this product? "${cur.name}" and its recorded sales will be moved to Recently Deleted. You can restore it from there.`} label="Delete" onYes={()=>del(cur)} onClose={closeM}/>}
+ {modal?.k==='trash'&&<Modal title="Recently Deleted" desc="Restore a product to bring back its stock and sales." onClose={()=>setModal(null)}>
+  {trash.length?<ul className="plist">{trash.map(p=><li key={p.id} className="prow"><div className="pmain"><b>{p.name}</b><span className="muted xs">{p.quantity} pcs · deleted {fmtDate(p.deletedAt)}</span></div>
+   <div className="pmeta"><Btn v="secondary" onClick={()=>restore(p,{k:'trash'})}><RotateCcw size={15}/>Restore</Btn><Btn v="danger" onClick={()=>setModal({k:'purge',p})}>Delete forever</Btn></div></li>)}</ul>:<Empty title="Nothing deleted" desc="Deleted products will show up here so you can restore them."/>}</Modal>}
+ {modal?.k==='purge'&&<Confirm title="Delete forever?" desc={`"${modal.p.name}" and its recorded sales will be permanently removed. This cannot be undone.`} label="Delete forever" onYes={()=>purge(modal.p)} onClose={()=>setModal({k:'trash'})}/>}
+ {toast&&<div className="toast" role="status">{toast}{undo&&<button className="toast-undo" onClick={()=>restore(undo)}>Undo</button>}</div>}</div>}
 
 export default function App(){
  const [session,setSession]=useState(undefined);

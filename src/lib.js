@@ -9,7 +9,7 @@ export const PAYMENT_MODES={cash:'Cash',gcash:'GCash',gotyme:'Gotyme',maribank:'
 export const CATEGORIES=['Shirts','Toys','Jewelries','Bags & Wallets'];
 export const PAID_STATUS={paid:'Paid',not_paid:'Not Paid'};
 export const RECEIVED={received:'Received',partial:'Partially Received',not:'Not Received'};
-export const ACTS=['Product Added','Stock Added','Stock Removed','Product Edited','Selling Price Changed','Received Status Changed','Product Deleted','Sale Recorded'];
+export const ACTS=['Product Added','Stock Added','Stock Removed','Product Edited','Selling Price Changed','Received Status Changed','Product Deleted','Product Restored','Sale Recorded'];
 export const fmtDate=d=>new Date(d).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
 export const fmtTime=d=>new Date(d).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
 export function inRange(date,f){if(!f||f.mode==='all')return true;const d=new Date(date),n=new Date(),sod=new Date(n.getFullYear(),n.getMonth(),n.getDate());

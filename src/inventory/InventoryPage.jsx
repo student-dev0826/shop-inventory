@@ -1,5 +1,5 @@
 import {useMemo,useState} from 'react';
-import {Search,SlidersHorizontal,Plus,X} from 'lucide-react';
+import {Search,SlidersHorizontal,Plus,X,RotateCcw} from 'lucide-react';
 import {peso,stockStatus,RECEIVED,inRange,PAYMENT_MODES,CATEGORIES} from '../lib.js';
 import {Btn,Field,ReceivedBadge,StockBadge,Empty,Menu,DateFilter,DF,PaidBadge} from '../ui.jsx';
 
@@ -7,13 +7,13 @@ const shortDate=d=>new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'sh
 const STOCK=[['all','All'],['Normal','Normal'],['Low Stock','Low Stock'],['Very Low','Very Low Stock'],['Out of Stock','Out of Stock']];
 const actions=(p,open,act)=>[['View Details',()=>open(p.id)],['Edit',()=>act('edit',p)],['Add Stock',()=>act('add',p)],['Remove Stock',()=>act('remove',p)],['Delete',()=>act('delete',p),1]];
 
-export default function InventoryPage({items,open,act,add}){
+export default function InventoryPage({items,open,act,add,trashCount=0,onTrash}){
  const [q,setQ]=useState(''),[panel,setPanel]=useState(false),[rec,setRec]=useState('all'),[stk,setStk]=useState('all'),[df,setDf]=useState(DF),[pay,setPay]=useState('all'),[cat,setCat]=useState('all');
  const active=(rec!=='all')+(stk!=='all')+(df.mode!=='all')+(pay!=='all')+(cat!=='all');
  const rows=useMemo(()=>items.filter(p=>`${p.name} ${p.category||''} ${p.reference||''}`.toLowerCase().includes(q.trim().toLowerCase())&&(rec==='all'||p.received===rec)&&(pay==='all'||p.paid===pay)&&(cat==='all'||p.category===cat)&&(stk==='all'||stockStatus(p.quantity).label===stk)&&inRange(p.dateAdded+'T12:00:00',df)),[items,q,rec,stk,df,pay,cat]);
  const reset=()=>{setRec('all');setStk('all');setPay('all');setCat('all');setDf(DF)};
  return <>
- <div className="ph"><div><h1>Inventory</h1><p className="muted">Manage your products and stock</p></div><Btn onClick={add}><Plus size={16}/>Add Product</Btn></div>
+ <div className="ph"><div><h1>Inventory</h1><p className="muted">Manage your products and stock</p></div><div className="row">{trashCount>0&&<Btn v="secondary" onClick={onTrash}><RotateCcw size={16}/>Recently Deleted<span className="count">{trashCount}</span></Btn>}<Btn onClick={add}><Plus size={16}/>Add Product</Btn></div></div>
  <div className="bar"><div className="search"><Search size={16}/><input aria-label="Search products by item name" placeholder="Search item or reference…" value={q} onChange={e=>setQ(e.target.value)}/>{q&&<button className="clear" aria-label="Clear search" onClick={()=>setQ('')}><X size={14}/></button>}</div>
   <Btn v="secondary" aria-expanded={panel} onClick={()=>setPanel(!panel)}><SlidersHorizontal size={16}/>Filter{active>0&&<span className="count">{active}</span>}</Btn></div>
  {panel&&<div className="card pad fpanel"><Field label="Category"><select value={cat} onChange={e=>setCat(e.target.value)}><option value="all">All</option>{CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}</select></Field>
