@@ -51,6 +51,8 @@ function Shop({onSignOut}){
  const editP=(o,f)=>run(()=>api.editProduct(o,f),f.received!==o.received&&f.name===o.name&&f.category===(o.category||'')&&f.quantity===o.quantity&&f.wholePrice===o.wholePrice&&f.sellingPrice===o.sellingPrice&&f.dateAdded===o.dateAdded&&f.paid===o.paid&&f.paymentMode===o.paymentMode&&f.reference===o.reference?'Received status updated.':'Product updated successfully.',ret());
  const stock=(p,v,add)=>run(()=>api.adjustStock(p.id,add?v:-v),add?'Stock added successfully.':'Stock removed successfully.',ret());
  const sell=(p,qty,method)=>run(()=>api.recordSale(p.id,qty,method),'Sale recorded successfully.');
+ const editS=(s,qty,method)=>run(()=>api.editSale(s.id,qty,method),'Sale updated successfully.');
+ const delS=s=>run(()=>api.deleteSale(s.id),'Sale deleted. Stock was returned.');
  const del=async p=>{if(await run(()=>api.deleteProduct(p.id),'Product deleted.'))setUndo({id:p.id,name:p.name})};
  const restore=(p,m=null)=>run(()=>api.restoreProduct(p.id),`"${p.name}" restored.`,m);
  const purge=p=>run(()=>api.purgeProduct(p.id),'Deleted forever.',{k:'trash'});
@@ -67,7 +69,7 @@ function Shop({onSignOut}){
  <div className="main"><header className="top"><button className="icon" aria-label="Open menu" onClick={()=>setNav(true)}><MenuI size={20}/></button><img className="logo-img" src={logo} alt=""/><b>Kerstine Styles</b></header>
  <main>{page==='dashboard'&&<Dashboard items={items} history={history} summary={summary} open={id=>setModal({k:'view',id})} go={setPage}/>}
  {page==='inventory'&&<InventoryPage items={items} open={id=>setModal({k:'view',id})} act={act} add={()=>setModal({k:'add'})} trashCount={trash.length} onTrash={()=>setModal({k:'trash'})}/>}
- {page==='sales'&&<SalesPage items={items} sales={sales} onSell={sell}/>}
+ {page==='sales'&&<SalesPage items={items} sales={sales} onSell={sell} onEdit={editS} onDelete={delS}/>}
  {page==='history'&&<HistoryPage history={history} has={id=>!!find(id)} open={id=>setModal({k:'view',id})}/>}</main></div>
  {modal?.k==='add'&&<ProductForm onSave={addP} onClose={()=>setModal(null)}/>}
  {modal?.k==='edit'&&cur&&<ProductForm init={cur} onSave={f=>editP(cur,f)} onClose={closeM}/>}

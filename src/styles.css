@@ -193,3 +193,5 @@ tbody tr:hover{background:rgba(188,222,251,.22)}
 .toast-undo{background:none;border:0;color:#FBBCF9;font:inherit;font-weight:700;margin-left:14px;cursor:pointer;text-decoration:underline;padding:0}
 .toast{display:flex;align-items:center;justify-content:center}
 .modal .plist{margin-top:4px}
+/* Recent Sales holds the floating ⋮ menu: backdrop-filter on its card would trap the fixed menu (same reason as .card.tw/.card.pc), so it gets a denser white instead */
+.card.dsec.nofx{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.88)}
