@@ -4,7 +4,7 @@ import Login from './Login.jsx';
 import logo from '../logo/kerstinelogohd.jpg';
 import {supabase} from './supabase.js';
 import {LayoutDashboard,Boxes,History as HIcon,Menu as MenuI,Package,Layers,Wallet,TrendingUp,PiggyBank,Truck,Search,SlidersHorizontal,Plus,Trash2,Store,RotateCcw,ShoppingCart,LogOut} from 'lucide-react';
-import {peso,calc,stockStatus,RECEIVED,ACTS,fmtDate,inRange,validate,today,PAYMENT_MODES} from './lib.js';
+import {peso,calc,stockStatus,RECEIVED,ACTS,fmtDate,inRange,validate,today,PAYMENT_MODES,CATEGORIES} from './lib.js';
 import Dashboard from './dashboard/Dashboard.jsx';
 import {Btn,Modal,Confirm,Field,ReceivedBadge,StockBadge,SummaryCard,Empty,Timeline,Menu,DateFilter,DF} from './ui.jsx';
 import StockModal from './products/StockModal.jsx';
@@ -13,15 +13,16 @@ import HistoryPage from './history/HistoryPage.jsx';
 import SalesPage from './sales/SalesPage.jsx';
 import InventoryPage from './inventory/InventoryPage.jsx';
 
-const blank={name:'',quantity:'',wholePrice:'',sellingPrice:'',received:'received',dateAdded:today(),paid:'not_paid',paymentMode:'',reference:''};
+const blank={name:'',category:'',quantity:'',wholePrice:'',sellingPrice:'',received:'received',dateAdded:today(),paid:'not_paid',paymentMode:'',reference:''};
 
 function ProductForm({init,onSave,onClose}){
- const [f,setF]=useState(init?{name:init.name,quantity:init.quantity,wholePrice:init.wholePrice,sellingPrice:init.sellingPrice,received:init.received,dateAdded:init.dateAdded,paid:init.paid,paymentMode:init.paymentMode,reference:init.reference}:blank);
+ const [f,setF]=useState(init?{name:init.name,category:init.category||'',quantity:init.quantity,wholePrice:init.wholePrice,sellingPrice:init.sellingPrice,received:init.received,dateAdded:init.dateAdded,paid:init.paid,paymentMode:init.paymentMode,reference:init.reference}:blank);
  const [err,setErr]=useState({}),set=k=>e=>setF({...f,[k]:e.target.value});
  const q=Number(f.quantity)||0,w=Number(f.wholePrice)||0,s=Number(f.sellingPrice)||0,qi=q+(init?.sold||0),each=qi>0?w/qi:(init?.unit||0);
  const submit=e=>{e.preventDefault();const er=validate(f);setErr(er);if(!Object.keys(er).length)onSave({...f,name:f.name.trim(),quantity:+f.quantity,wholePrice:+f.wholePrice,sellingPrice:+f.sellingPrice})};
  return <Modal title={init?'Edit Product':'Add Product'} desc="Calculated values update automatically." onClose={onClose}><form onSubmit={submit} noValidate>
  <div className="grid2"><Field label="Item Name" error={err.name}><input value={f.name} onChange={set('name')} autoFocus/></Field>
+ <Field label="Category" error={err.category}><select value={f.category} onChange={set('category')}><option value="">Select…</option>{CATEGORIES.map(c=><option key={c} value={c}>{c}</option>)}</select></Field>
  <Field label="Date Added"><input type="date" value={f.dateAdded} onChange={set('dateAdded')}/></Field>
  <Field label="Quantity" error={err.quantity}><input type="number" min="0" step="1" value={f.quantity} onChange={set('quantity')}/></Field>
  <Field label="Whole Price (₱)" error={err.wholePrice}><input type="number" min="0" step="0.01" value={f.wholePrice} onChange={set('wholePrice')}/></Field>
@@ -47,7 +48,7 @@ function Shop({onSignOut}){
  const find=id=>items.find(p=>p.id===id);
  const run=async(fn,msg,m=null)=>{if(busy.current)return false;busy.current=true;setSaving(true);try{await fn();await refresh();setModal(m);setToast(msg);return true}catch(e){setToast('Something went wrong: '+e.message);refresh();return false}finally{busy.current=false;setSaving(false)}};
  const addP=f=>run(()=>api.addProduct(f),'Product added successfully.');
- const editP=(o,f)=>run(()=>api.editProduct(o,f),f.received!==o.received&&f.name===o.name&&f.quantity===o.quantity&&f.wholePrice===o.wholePrice&&f.sellingPrice===o.sellingPrice&&f.dateAdded===o.dateAdded&&f.paid===o.paid&&f.paymentMode===o.paymentMode&&f.reference===o.reference?'Received status updated.':'Product updated successfully.',ret());
+ const editP=(o,f)=>run(()=>api.editProduct(o,f),f.received!==o.received&&f.name===o.name&&f.category===(o.category||'')&&f.quantity===o.quantity&&f.wholePrice===o.wholePrice&&f.sellingPrice===o.sellingPrice&&f.dateAdded===o.dateAdded&&f.paid===o.paid&&f.paymentMode===o.paymentMode&&f.reference===o.reference?'Received status updated.':'Product updated successfully.',ret());
  const stock=(p,v,add)=>run(()=>api.adjustStock(p.id,add?v:-v),add?'Stock added successfully.':'Stock removed successfully.',ret());
  const sell=(p,qty,method)=>run(()=>api.recordSale(p.id,qty,method),'Sale recorded successfully.');
  const del=p=>run(()=>api.deleteProduct(p.id),'Product deleted successfully.');

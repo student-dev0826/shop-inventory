@@ -2,6 +2,7 @@
 create table public.products (
   id uuid primary key default gen_random_uuid(),
   item_name text not null check (length(trim(item_name)) > 0),
+  category text check (category is null or category in ('Shirts','Toys','Jewelries','Bags & Wallets')),
   date_added date not null default current_date,
   quantity integer not null default 0 check (quantity >= 0),
   whole_price numeric(12,2) not null default 0 check (whole_price >= 0),
