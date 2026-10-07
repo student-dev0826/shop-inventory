@@ -195,3 +195,16 @@ tbody tr:hover{background:rgba(188,222,251,.22)}
 .modal .plist{margin-top:4px}
 /* Recent Sales holds the floating ⋮ menu: backdrop-filter on its card would trap the fixed menu (same reason as .card.tw/.card.pc), so it gets a denser white instead */
 .card.dsec.nofx{-webkit-backdrop-filter:none;backdrop-filter:none;background:rgba(255,255,255,.88)}
+
+/* Recent Sales rows: fixed columns so qty, payment badge, total and the ⋮ menu line up row to row */
+.srow{flex-wrap:wrap}
+.smeta{display:grid;grid-template-columns:44px 74px 1fr 36px;align-items:center;column-gap:8px;width:100%}
+.smeta .sq{text-align:right}
+.smeta .sb{justify-self:center;justify-content:center;width:100%;max-width:70px;box-sizing:border-box}
+.smeta .st{text-align:right}
+.smeta .sm{display:flex;justify-content:flex-end}
+.smeta .sm .icon{margin-right:-6px}
+@media(min-width:560px){
+ .srow{flex-wrap:nowrap}
+ .smeta{width:330px;flex:0 0 330px;grid-template-columns:48px 76px 1fr 36px}
+}
