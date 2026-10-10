@@ -7,7 +7,7 @@ const need=()=>{if(!supabase)throw new Error('Supabase is not configured. Copy .
 const friendly=e=>{const m=String(e?.message||'');if(/fetch|network|load failed/i.test(m))return"Can't reach the server. Check your internet connection and try again.";if(e?.code==='42501'||/permission|row-level/i.test(m))return"You don't have permission to do that.";if(e?.code==='23514')return"One of the values isn't allowed. Please check the numbers and try again.";if(/not found/i.test(m))return'This product no longer exists. It may have been deleted on another device.';if(/Cannot (remove|sell) more/i.test(m))return m;if(/Sale not found/i.test(m))return'This sale no longer exists. It may have been changed on another device.';return'Something went wrong while talking to the database. Please try again.'};
 const ok=({data,error})=>{if(error){console.error(error);throw new Error(friendly(error))}return data};
 const toProduct=r=>({id:r.id,deletedAt:r.deleted_at||null,name:r.item_name,category:r.category||'',dateAdded:r.date_added,quantity:Math.max(0,+r.quantity||0),wholePrice:+r.whole_price||0,sellingPrice:+r.selling_price||0,unit:+r.unit_cost||0,received:D2R[r.received_status]||'not',paid:r.payment_status==='paid'?'paid':'not_paid',paymentMode:r.payment_mode||'',reference:r.payment_reference||'',sold:Math.max(0,+r.sold_quantity||0),createdAt:r.created_at,updatedAt:r.updated_at});
-const toSale=r=>({id:r.id,productId:r.product_id,productName:r.product_name,quantity:r.quantity,total:+r.total||0,method:r.payment_method,at:r.created_at});
+const toSale=r=>({id:r.id,productId:r.product_id,productName:r.product_name,quantity:r.quantity,unitPrice:+r.unit_price||0,total:+r.total||0,method:r.payment_method,at:r.created_at});
 const toHistory=r=>({id:r.id,productId:r.product_id,productName:r.product_name,type:D2T[r.activity_type]||r.activity_type,desc:r.description,change:r.quantity_change,at:r.created_at});
 const row=(f,unit,sold=0)=>({item_name:f.name,category:f.category,date_added:f.dateAdded,quantity:f.quantity,whole_price:f.wholePrice,selling_price:f.sellingPrice,received_status:R2D[f.received],payment_status:f.paid==='paid'?'paid':'not_paid',payment_mode:f.paymentMode||null,payment_reference:f.reference?.trim()||null,unit_cost:(f.quantity+sold)>0?f.wholePrice/(f.quantity+sold):unit});
 
@@ -35,8 +35,8 @@ export async function adjustStock(id,delta){need();ok(await supabase.rpc('adjust
 export async function deleteProduct(id){need();ok(await supabase.rpc('delete_product',{p_id:id}))}
 export async function restoreProduct(id){need();ok(await supabase.rpc('restore_product',{p_id:id}))}
 export async function purgeProduct(id){need();ok(await supabase.rpc('purge_product',{p_id:id}))}
-export async function recordSale(id,qty,method){need();ok(await supabase.rpc('record_sale',{p_id:id,p_qty:qty,p_method:method}))}
-export async function editSale(id,qty,method){need();ok(await supabase.rpc('edit_sale',{p_sale:id,p_qty:qty,p_method:method}))}
+export async function recordSale(id,qty,method,price){need();ok(await supabase.rpc('record_sale',{p_id:id,p_qty:qty,p_method:method,p_price:price}))}
+export async function editSale(id,qty,method,price){need();ok(await supabase.rpc('edit_sale',{p_sale:id,p_qty:qty,p_method:method,p_price:price}))}
 export async function deleteSale(id){need();ok(await supabase.rpc('delete_sale',{p_sale:id}))}
 
 // Sign-in only. There is no sign-up in the app, and sign-ups are switched off in Supabase.

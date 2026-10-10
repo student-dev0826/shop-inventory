@@ -10,7 +10,7 @@ const ProductList=({rows,onOpen,badges,empty})=>rows.length?<ul className="plist
 export default function Dashboard({items,history,summary,open,go}){
  const src={items,history};
  const onOpen=open;
- const list=src.items,t=list.reduce((a,p)=>({q:a.q+p.quantity,c:a.c+p.priceEach*p.initial,s:a.s+p.expectedSales,p:a.p+p.expectedProfit}),{q:0,c:0,s:0,p:0});
+ const list=src.items,t=list.reduce((a,p)=>({q:a.q+p.quantity,c:a.c+p.priceEach*p.quantity,s:a.s+p.sellingPrice*p.quantity}),{q:0,c:0,s:0});t.p=t.s-t.c;
  const recent=[...list].sort((a,b)=>(b.dateAdded+(b.createdAt||'')).localeCompare(a.dateAdded+(a.createdAt||''))).slice(0,5);
  const low=list.filter(p=>p.quantity<20).sort((a,b)=>a.quantity-b.quantity).slice(0,6);
  const notRec=list.filter(p=>p.received==='not'),partial=list.filter(p=>p.received==='partial').length;
@@ -22,9 +22,9 @@ export default function Dashboard({items,history,summary,open,go}){
  <div className="cards">
   <SummaryCard icon={Package} tone="pink" label="Total Products" value={list.length} sub={`${list.filter(p=>p.quantity<20).length} low or out of stock`}/>
   <SummaryCard icon={Layers} tone="pink" label="Total Quantity" value={t.q.toLocaleString('en-PH')} sub="units across all products"/>
-  <SummaryCard icon={Wallet} tone="pink" label="Total Inventory Cost" value={peso(t.c)} sub="initial stock × price each"/>
-  <SummaryCard icon={TrendingUp} tone="pink" label="Expected Sales" value={peso(t.s)} sub="on your full initial stock"/>
-  <SummaryCard icon={PiggyBank} tone="pink" label="Expected Profit" value={peso(t.p)} sub={`about ${margin}% margin`}/>
+  <SummaryCard icon={Wallet} tone="pink" label="Total Inventory Cost" value={peso(t.c)} sub="remaining stock × price each"/>
+  <SummaryCard icon={TrendingUp} tone="pink" label="Expected Sales" value={peso(t.s)} sub="remaining stock × selling price"/>
+  <SummaryCard icon={PiggyBank} tone="pink" label="Expected Profit" value={peso(t.p)} sub={`expected sales − cost · about ${margin}% margin`}/>
   <SummaryCard icon={Truck} tone="pink" label="Products Not Received" value={notRec.length} sub={partial?`${partial} more partially received`:'waiting for delivery'}/>
   <SummaryCard icon={ShoppingCart} tone="pink" label="Units Sold" value={(summary?.units||0).toLocaleString('en-PH')} sub="from recorded sales"/>
   <SummaryCard icon={Coins} tone="pink" label="Total Sales" value={peso(summary?.revenue||0)} sub="money from sales"/>

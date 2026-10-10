@@ -50,8 +50,8 @@ function Shop({onSignOut}){
  const addP=f=>run(()=>api.addProduct(f),'Product added successfully.');
  const editP=(o,f)=>run(()=>api.editProduct(o,f),f.received!==o.received&&f.name===o.name&&f.category===(o.category||'')&&f.quantity===o.quantity&&f.wholePrice===o.wholePrice&&f.sellingPrice===o.sellingPrice&&f.dateAdded===o.dateAdded&&f.paid===o.paid&&f.paymentMode===o.paymentMode&&f.reference===o.reference?'Received status updated.':'Product updated successfully.',ret());
  const stock=(p,v,add)=>run(()=>api.adjustStock(p.id,add?v:-v),add?'Stock added successfully.':'Stock removed successfully.',ret());
- const sell=(p,qty,method)=>run(()=>api.recordSale(p.id,qty,method),'Sale recorded successfully.');
- const editS=(s,qty,method)=>run(()=>api.editSale(s.id,qty,method),'Sale updated successfully.');
+ const sell=(p,qty,method,price)=>run(()=>api.recordSale(p.id,qty,method,price),'Sale recorded successfully.');
+ const editS=(s,qty,method,price)=>run(()=>api.editSale(s.id,qty,method,price),'Sale updated successfully.');
  const delS=s=>run(()=>api.deleteSale(s.id),'Sale deleted. Stock was returned.');
  const del=async p=>{if(await run(()=>api.deleteProduct(p.id),'Product deleted.'))setUndo({id:p.id,name:p.name})};
  const restore=(p,m=null)=>run(()=>api.restoreProduct(p.id),`"${p.name}" restored.`,m);

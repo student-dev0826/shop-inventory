@@ -5,3 +5,4 @@
 4. Optional live sync between devices: run `supabase/realtime.sql` once. (The app also refreshes whenever you return to the tab.)
 5. Deploy: push to GitHub, import the repo in Vercel (Vite is auto-detected), add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, deploy. Locally, check with `npm run build && npm run preview`.
 6. Updating an existing database? Run `supabase/add_category.sql` once (adds the product Category field) before deploying.
+7. Updating for custom sale prices? Run `supabase/add_custom_price.sql` once before deploying.
